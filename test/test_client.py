@@ -134,6 +134,12 @@ class NodesTestCase(unittest.TestCase):
         index = n1.url.split('/')[-1]
         self.assertEqual(self.gdb[index], n1)
 
+    def test_set_node_with_assignment(self):
+        n1 = self.gdb.nodes.create(name="John Doe", profession="Hacker")
+        index = n1.url.split('/')[-1]
+        
+        self.assertEqual(self.gdb[index], n1)
+
 class RelationshipsTestCase(NodesTestCase):
 
     def test_create_relationship(self):
