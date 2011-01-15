@@ -91,7 +91,10 @@ class GraphDatabase(object):
         response, content = Request().get(url)
         if response.status == 200:
             response_json = simplejson.loads(content)
-            self.index_url = response_json['index']
+            try:
+                self.index_url = response_json['index']
+            except KeyError:
+                self.index_url = response_json['node_index']
             self.reference_node_url = response_json['reference_node']
             self.nodes = NodeProxy(self.url, self.node_path,
                                    self.reference_node_url)
