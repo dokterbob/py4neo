@@ -10,11 +10,11 @@ from urlparse import urlsplit
 
 __all__ = ("GraphDatabase", "Incoming", "Outgoing", "Undirected",
            "StopAtDepth", "NotFoundError", "StatusException")
-__author__ = "Javier de la Rosa, and Diego Muñoz Escalante"
-__credits__ = ["Javier de la Rosa", "Diego Muñoz Escalante"]
+__author__ = "Javier de la Rosa, Diego Muñoz Escalante and Tim McNamara"
+__credits__ = ["Javier de la Rosa", "Diego Muñoz Escalante", "Tim McNamara"]
 __license__ = "GPLv3"
 __version__ = "0.1.0"
-__email__ = "versae [at] gmail [dot] com"
+__email__ = "paperless@timmcnamara.co.nz"
 __status__ = "Development"
 
 # Global options
