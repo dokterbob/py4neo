@@ -106,6 +106,9 @@ class GraphDatabase(object):
         else:
             raise NotFoundError(response.status, "Unable get root")
 
+    def __getitem__(self, item):
+        return self.nodes[item]
+
     def _get_reference_node(self):
         return Node(self.reference_node_url)
     reference_node = property(_get_reference_node)

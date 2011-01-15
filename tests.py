@@ -129,6 +129,10 @@ class NodesTestCase(unittest.TestCase):
         except client.NotFoundError, client.StatusException:
             pass
 
+    def test_call_node_by_number(self):
+        n1 = self.gdb.nodes.create(name="John Doe", profession="Hacker")
+        index = n1.url.split('/')[-1]
+        self.assertEqual(self.gdb[index], n1)
 
 class RelationshipsTestCase(NodesTestCase):
 
