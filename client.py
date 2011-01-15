@@ -4,7 +4,10 @@ import datetime
 import decimal
 import httplib2
 import re
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import time
 from urlparse import urlsplit
 
