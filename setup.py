@@ -19,7 +19,7 @@ setup(
     author_email = "paperless@timmcnamara.co.nz",
     description = "This is an Example Package",
     license = "GPLv3",
-    keywords = "neo4j rest ",
+    keywords = ["Neo4j","REST"],
     url = "https://github.com/timClicks/py4neo",
     classifiers = [
     "Development Status :: 3 - Alpha", 
