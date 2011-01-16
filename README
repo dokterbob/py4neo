@@ -1,82 +1,99 @@
-Neo4j Python REST Client
-========================
+
+  ==========================================
+   py4neo :: A Python REST client for Neo4j
+  ==========================================
 
 :synopsis: Allows interact with Neo4j standalone REST server from Python.
+:heritage: py4neo is a fork of neo4j-rest-client_
 
-The first objective of Neo4j Python REST Client is to make transparent for
-Python programmers the use of a local database through neo4j.py_ or a remote
-database thanks to Neo4j REST Server. So, the syntax of this API is fully
-compatible with neo4j.py. However, a new syntax is introduced in order to
-reach a more pythonic style.
+py4neo provides a Pythonic interface to interacting with graphs stored in
+Neo4j. It relies on Neo4j's REST interface. Its API is compatibile with
+neo4j.py_, which means current applications should be able to seamlessly
+migrate.
 
-The main file is named client.py, but you can rename with whatever you want.
+py4neo attempts to place an emphasis on interacting with the graph as the
+main data structure. It is compatibile with ``neo4j-rest-client``, however it
+provides a number of convience methods to increase the elegance of the
+code.
+
+Future versions will attempt to create an interface to NetworkX_.
 
 
-Instantiation
--------------
+Usage
+=====
 
-The main class is *GraphDatabase*, exactly how in neo4j.py_::
+Note:
+  This guide assumes that you are running Ubuntu_ with a bash shell.
+  However, there should be very little difference between operating
+  systems.
+
+
+Starting the graph server
+-------------------------
+
+To begin, start the Neo4j server::
+
+  $ /path/to/neo4j/bin/neo4j start
+
+You are now able to use py4neo with your applications.
+
+
+Graphs
+------
+
+Mirroring neo4j.py_, the main class you is *GraphDatabase*::
 
   >>> from client import GraphDatabase
-  
-  >>> gdb = GraphDatabase("http://localhost:9999")
+  >>> graphdb = GraphDatabase("http://localhost:7474/db/data/")
 
 Two global options are available::
 
   client.CACHE = False # Default
-
-If CACHE is 'True', a '.cache' directory is created and the future request to
-the same URL will be taken from cache
-And::
-
   client.DEBUG = False # Default
 
-If DEBUG is 'True', 'httplib2' is set to debuglevel = 1.
+
+If ``client.CACHE`` is ``True``, then a .cache directory will be created. 
+It will be populated as nodes are queried, and future requests to
+the same URL will be taken from cache.
+
+When ``client.DEBUG`` is ``True``, ``httplib2`` is set to debuglevel = 1.
+This will assist with debugging networking issues.
 
 
-Node, Relationships and Properties
+Nodes, Relationships and Properties
 ----------------------------------
-
-Due to the syntax is fully compatible with neo4j.py_, the next lines only show
-the commands added and its differences.
 
 Creating a node::
 
   >>> n = graphdb.node()
-  
-  # Equivalent to
-  >>> n = graphdb.nodes.create()
+  >>> n = graphdb.nodes.create() #equivalent
 
 Specify properties for new node::
 
   >>> n = graphdb.node(color="Red", widht=16, height=32)
-  
-  # Or
-  >>> n = graphdb.nodes.create(color="Red", widht=16, height=32)
+  >>> n = graphdb.nodes.create(color="Red", widht=16, height=32) #equivalent
 
-Accessing node by id::
+Accessing nodes::
 
-  >>> n = graphdb.node[14]
-  
-  # Using the identifier or the URL is possible too
-  >>> n = graphdb.nodes.get(14)
+  >>> graphdb[14]
+  >>> graphdb.node[14]
+  >>> graphdb.nodes.get(14)
 
 Accessing properties::
 
-  >>> value = n['key'] # Get property value
-  
-  >>> n['key'] = value # Set property value
-  
-  >>> del n['key']     # Remove property value
+  >>> n['color']
+  "Red"
+  >>> n['color'] = "Blue"
+  >>> del n['color']
   
   # Or the other way
-  >>> value = n.get('key', 'default') # Support 'default' values
+  >>> value = n.get('key', 'default') # Supports 'default' values
   
   >>> n.set('key', value)
   
   >>> n.delete('key')
 
-Besides, a Node object has other attributes::
+Node objects have other attributes::
 
   >>> n.properties
   {}
@@ -89,103 +106,102 @@ Besides, a Node object has other attributes::
   14
   
   >>> n.url
-  'http://localhost:9999/node/14'
+  'http://localhost:7474/db/data/node/14'
 
-Create relationship::
+Creating relationships
+----------------------
 
-  >>> n1.Knows(n2)
-  
-  # Or
-  >>> n1.relationships.create("Knows", n2) # Usefull when the name of
-                                           # relationship is stored in a variable
+The simplest way to create a relationship is to use the 
+attribute syntax. Capitalisation is a Neo4j convention to
+indicate a relationship::
 
-Specify properties for new relationships::
+  >>> anna = graphdb.node(name="Anna")
+  >>> bill = graphdb.node(name="Bill")
+  >>> anna.KNOWS(bill)
 
-  >>> n1.Knows(n2, since=123456789, introduced_at="Christmas party")
-  
-  # It's the same to
-  >>> n1.relationships.create("Knows", n2, since=123456789,
+All graphs in Neo4j are directed. This means that reciprocial 
+relationships must be created explicitly.
+
+Sometimes it's useful to store relationship names as variables or
+use complex keys. This is not handled very well by Python's
+attribute syntax, so you should use the underlying methods::
+
+  >>> knows = "KNOWS"
+  >>> anna.relationships.create(knows, bill)
+
+Relationships can also have properties::
+
+  >>> anna.KNOWS(bill, since=123456789, introduced_at="Christmas party")
+  >>> bill.relationships.create("KNOWS", anna, since=123456789,
                                            introduced_at="Christmas party")
 
-The creation returns a Relationship object, which has properties, setter and
-getters like a node::
+Relationship attributes:
+------------------------
 
-  >>> rel = n1.relationships.create("Knows", n2, since=123456789)
+  >>> bill = n1.relationships.create("DISLIKES", anna, since=123456789)
   
   >>> rel.start
-  <Neo4j Node: http://localhost:9999/node/14>
+  <Neo4j Node: http://localhost:7474/db/data/node/14>
   
   >>> rel.end
-  <Neo4j Node: http://localhost:9999/node/32>
+  <Neo4j Node: http://localhost:7474/db/data/node/32>
   
   >>> rel.type
-  'Knows'
+  'DISLIKES'
   
   >>> rel.properties
   {'since': 123456789}
 
-Others functions over 'relationships' attribute are possible. Like get all,
-incoming or outgoing relationships (typed or not)::
+Retrieving a node's relationships
+---------------------------------
 
-  >>> rels = n1.relationships.all()
-  [<Neo4j Relationship: http://localhost:9999/relationship/35843>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35840>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35841>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35842>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35847>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35846>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35845>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35844>,
-   <Neo4j Relationship: http://localhost:9999/relationship/11>,
-   <Neo4j Relationship: http://localhost:9999/relationship/10>,
-   <Neo4j Relationship: http://localhost:9999/relationship/9>]
+Use a node.relationship's all method to get every relationship
+associated with that node. This includes both incoming and 
+outgoing relationships::
+
+  >>> anna.relationships.all() #doctest: +ELLIPSIS
+  [<Neo4j Relationship: http://localhost:7474/db/data/relationship/...>,
+  ...]
+
+To restrict this to a particular type, add the desired types as a list 
+to the types argument::
+
+  >>> anna.relationships.all(types=["IS_CAUTIOUS_OF"]) #doctest: +ELLIPSIS
+  []
+
+It is possible to refine this further to retrieve incoming or outgoing
+relationships.
+
+  >>> anna.relationships.incoming(types=["KNOWS"])  #doctest: +ELLIPSIS
+  [<Neo4j Relationship: http://localhost:7474/db/data/relationship/...>,
+   ...]
   
-  >>> rels = n1.relationships.incoming(types=["Knows"])
-  [<Neo4j Relationship: http://localhost:9999/relationship/35843>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35840>,
-   <Neo4j Relationship: http://localhost:9999/relationship/11>,
-   <Neo4j Relationship: http://localhost:9999/relationship/10>,
-   <Neo4j Relationship: http://localhost:9999/relationship/9>]
-  
-  >>> rels = n1.relationships.outgoing(["Knows", "Loves"])
-  [<Neo4j Relationship: http://localhost:9999/relationship/35842>,
-   <Neo4j Relationship: http://localhost:9999/relationship/35847>]
+  >>> rels = n1.relationships.outgoing(["KNOWS", "LOVES"])
+  [<Neo4j Relationship: http://localhost:7474/db/data/relationship/35842>,
+   <Neo4j Relationship: http://localhost:7474/db/data/relationship/35847>]
 
 
 Traversals
 ----------
 
-The traversals framework is supported too with the same syntax of neo4j.py_,
-but with some added issues.
+Traversals through the graph are supported too with the same syntax of neo4j.py_::
 
-Regular way::
-
-  >>> n1.relationships.create("Knows", n2, since=1970)
-  <Neo4j Relationship: http://localhost:9999/relationship/36009>
-  
   >>> class TraversalClass(gdb.Traversal):
-     ...:     types = [
-     ...:         Undirected.Knows
-     ...:     ]
-     ...: 
-  
-  >>> [traversal for traversal in TraversalClass(n1)]
-  [<Neo4j Node: http://localhost:9999/node/15880>]
+     ...     types = [Undirected.Knows]
 
-Added way (more ''pythonic'')::
+py4neo also provides an alternate syntax::
 
-  >>> n1.relationships.create("Knows", n2, since=1970)
-  <Neo4j Relationship: http://localhost:9999/relationship/36009>
-  
   >>> n1.traverse(types=[client.Undirected.Knows])
-  [<Neo4j Node: http://localhost:9999/node/15880>]
+  [<Neo4j Node: http://localhost:7474/db/data/node/15880>]
 
 
-Transaction
------------
+Transactions
+------------
 
-Currently, the transaction support is not implemented in Neo4j REST server, so
-the Python client is not able to provide it.
+Neo4j's REST server lacks transactions.
 
 
 .. _neo4j.py: http://components.neo4j.org/neo4j.py/
+.. _neo4j-rest-client: https://github.com/versae/neo4j-rest-client
+.. _Ubuntu: http://www.ubuntu.com/
+.. _NetworkX: http://networkx.lanl.gov/
